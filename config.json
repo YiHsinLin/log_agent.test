@@ -1,0 +1,6 @@
+{
+  "proxy": {
+    "baseurl": "http://localhost:9200",
+    "baseindex": "/mars/test/"
+  }
+}

@@ -1,70 +1,90 @@
 'use strict';
 
+var debug = require('debug')('log_agent');
+var program = require('commander');
+var jsonfile = require('jsonfile');
+var Promise = require("bluebird");
 var Syslogd = require('syslogd');
-var rest = require('restler');
+var restler = require('restler');
 
-Syslogd(function(info) {
-    /*
-    info = {
-          facility: 7
-        , severity: 22
-        , tag: 'tag'
-        , time: Mon Dec 15 2014 10:58:44 GMT-0800 (PST)
-        , hostname: 'hostname'
-        , address: '127.0.0.1'
-        , family: 'IPv4'
-        , port: null
-        , size: 39
-        , msg: 'info'
+program
+    .version('0.0.1')
+    //.option('--host <n>', 'host name or IP address', 'localhost')
+    .option('--port <n>', 'port number', 514)
+    .option('--config <n>', 'configuration file', 'config.json')
+    .parse(process.argv);
+
+var defaultConfig = {
+    port: program.port,
+    proxy: {
+        baseurl: "http://localhost:9200",
+        baseindex: "/"
     }
-    */
-    console.log(info);
+};
 
-    var hrTime = process.hrtime();
+var jsonReadFile = Promise.promisify(jsonfile.readFile);
 
-    console.log(hrTime);
+var app = jsonReadFile(program.config)
+    .then(function (configObj) {
+        return Object.assign(defaultConfig, configObj);
+    }, function errorOnReadConfig(err) {
+        debug(err.message);
+        return defaultConfig;
+    })
+    .then(function (configObj) {
+        Syslogd(function(info) {
+            proxy.call(configObj.proxy, info);
+        }).listen(configObj.port, function(err) {
+            console.log('start');
+        });
+    });
 
-    var baseurl = "http://localhost:9200/mars/system/" + hrTime[0] + '' + hrTime[1];
+function proxy(info) {
+    /*
+     info = {
+         facility: 7
+         , severity: 22
+         , tag: 'tag'
+         , time: Mon Dec 15 2014 10:58:44 GMT-0800 (PST)
+         , hostname: 'hostname'
+         , address: '127.0.0.1'
+         , family: 'IPv4'
+         , port: null
+         , size: 39
+         , msg: 'info'
+     }
+     */
 
-    console.log(baseurl);
-
-    var reqHeaders,
-        body;
-
-        reqHeaders = {
+    var self = this,
+        url = makeReqUrl(),
+        headers = {
             "content-type": "application/json"
-        };
-
+        },
         body = {
-            severity: 6,
-            service: "fabric",
+            facility: info.facility,
+            severity: info.severity,
+            tag: info.tag,
+            time: info.time.toUTCString(),
             hostname: info.hostname,
             address: info.address,
             message: info.msg
         };
 
-        console.log(body);
+    debug('POST %s, %o', url.index, body);
 
-        rest.post(baseurl, {headers: reqHeaders, data: JSON.stringify(body)})
-            .on('complete', function (result, response) {
-                if (300 <= response.statusCode) {
-                    console.log(response.statusCode);
-                }
-            });
+    restler.post(url.full, {headers: headers, data: JSON.stringify(body)})
+        .on('complete', function (result, response) {
+            if (300 <= response.statusCode) {
+                debug('POST %s failed [%d]', url.index, response.statusCode);
+            }
+        });
 
-    // rest.post(options.baseurl + '/login', {headers: reqHeaders, data: body})
-    //                 .on('complete', function (result, response) {
-    //                     if (300 <= response.statusCode) {
-    //                         return done(result, {result: result, response: response});
-    //                     } else {
-    //                         cookies = getCookies(response);
-    //                         ret.get('/api/users?username=' + options.username, function (err, result) {
-    //                             ret.id = result.result.users[0].id;
-    //                             return done(null, {result: result, response: response});
-    //                         });
-    //                     }
-    //                 });
+    function makeReqUrl() {
+        var hrTime = process.hrtime();
 
-}).listen(514, function(err) {
-    console.log('start')
-});
+        return {
+            full: self.baseurl + self.baseindex + hrTime[0] + '' + hrTime[1],
+            index: self.baseindex + hrTime[0] + '' + hrTime[1]
+        }
+    }
+}
