@@ -61,10 +61,12 @@ function proxy(info) {
             "content-type": "application/json"
         },
         body = {
+            id: url.id,
             facility: info.facility,
             severity: info.severity,
             tag: info.tag,
-            time: info.time.toUTCString(),
+            time: info.time.toISOString(),
+            localeDateTime: info.time.toLocaleDateString() + ' ' + info.time.toLocaleTimeString(),
             hostname: info.hostname,
             address: info.address,
             message: info.msg
@@ -84,7 +86,8 @@ function proxy(info) {
 
         return {
             full: self.baseurl + self.baseindex + hrTime[0] + '' + hrTime[1],
-            index: self.baseindex + hrTime[0] + '' + hrTime[1]
+            index: self.baseindex + hrTime[0] + '' + hrTime[1],
+            id: hrTime[0] + '' + hrTime[1]
         }
     }
 }
