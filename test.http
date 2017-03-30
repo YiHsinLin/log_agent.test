@@ -1,0 +1,91 @@
+GET http://localhost:9200/
+
+###
+POST http://localhost:9200/mars/test/1164104823762284 HTTP/1.1
+content-type: application/json
+
+{
+    "id": "1164104823762284",
+    "facility": 6,
+    "severity": 16,
+    "tag": "snmp",
+    "time": "2017-03-29T09:11:19.000Z",
+    "localeDateTime": "2017-03-29 17:11:19",
+    "hostname": "yehjunying-pc",
+    "address": "127.0.0.1",
+    "message": "VLAN 1 link-down notification\n"
+}
+
+###
+PUT http://localhost:9200/mars
+content-type: application/json
+
+{
+    "mappings": {
+        "test": {
+            "properties": {
+                "facility": { "type": "integer" },
+                "severity": { "type": "integer" },
+                "tag": { "type": "keyword" },
+                "time": { "type": "date" },
+                "localeDateTime": { "type": "text" },
+                "hostname": { "type": "keyword" },
+                "address": { "type": "ip" },
+                "message": { "type": "text" }
+            }
+        }
+    }
+}
+
+###
+GET http://localhost:9200/mars/test/_search HTTP/1.1
+content-type: application/json
+
+{
+    "query" : {
+        "term" : { "tag" : "snmp" }
+    }
+}
+
+###
+GET http://localhost:9200/mars/test/_search HTTP/1.1
+content-type: application/json
+
+{
+    "sort" : [
+        { "time" : {"order" : "asc"}},
+        "_score"
+    ],
+    "query" : {
+        "term" : { "tag" : "snmp" }
+    }
+}
+
+###
+GET http://localhost:9200/mars/test/_search HTTP/1.1
+content-type: application/json
+
+{
+    "sort" : [
+        { "time" : {"order" : "desc"}},
+        "_score"
+    ],
+    "query" : {
+        "term" : { "tag" : "snmp" }
+    }
+}
+
+###
+GET http://localhost:9200/mars/test/_search
+
+###
+GET http://localhost:9200/_search
+
+###
+GET http://localhost:9200/mars/employee/_search?q=25
+
+###
+GET http://localhost:9200/mars/employee/_search?q=hero
+
+###
+DELETE http://localhost:9200/*
