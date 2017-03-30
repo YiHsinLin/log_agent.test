@@ -4,7 +4,7 @@ var debug = require('debug')('log_agent');
 var program = require('commander');
 var jsonfile = require('jsonfile');
 var Promise = require("bluebird");
-var Syslogd = require('syslogd');
+var Syslogd = require('./syslogd'); // Using customized version
 var restler = require('restler');
 
 program
@@ -12,17 +12,54 @@ program
     //.option('--host <n>', 'host name or IP address', 'localhost')
     .option('--port <n>', 'port number', 514)
     .option('--config <n>', 'configuration file', 'config.json')
+    .option('--dry-run')
     .parse(process.argv);
 
 var defaultConfig = {
     port: program.port,
+    dryRun: program.dryRun,
     proxy: {
         baseurl: "http://localhost:9200",
-        baseindex: "/"
+        baseindex: "/",
+        target: {}
     }
 };
 
 var jsonReadFile = Promise.promisify(jsonfile.readFile);
+
+Syslogd.prototype.parse = function preParser(msg, rinfo) {
+    msg = msg + '';
+    msg = msg.trimRight();
+    if (!msg.startsWith('<')) {
+        var priIndex = msg.indexOf(' '),
+            pri = msg.substr(0, priIndex),
+            severityHash = {
+                'DEBUG': 7,
+                'ERROR': 3,
+                'FATAL': 2,
+                'INFO': 6,
+                'WARN': 4
+            };
+
+        if (typeof severityHash[pri] !== 'undefined') {
+            msg = '<' + (16 * 8 + severityHash[pri]) + '>' + msg.substr(priIndex, msg.length - 1);
+        }
+    }
+
+    return Syslogd.parser(msg, rinfo);
+};
+
+// (function () {
+//     var moment = require('moment');
+//     var y = moment('2017-03-30 14:48:57.977', 'YYYY-MM-DD hh:mm:ss.SSS');
+//
+//     var x = Syslogd.prototype.parse('INFO  2017-03-30 14:51:11.988 hostname AppTest: Hello World\r\n', {});
+//     debug('%o', x);
+//
+//     var x = Syslogd.prototype.parse('INFO  2017-03-30 14:51:11.988 hostname AppTest: Hello World\r\n', {address: '192.168.137.101'});
+//     debug('%o', x);
+// })();
+
 
 var app = jsonReadFile(program.config)
     .then(function (configObj) {
@@ -33,13 +70,29 @@ var app = jsonReadFile(program.config)
     })
     .then(function (configObj) {
         Syslogd(function(info) {
-            proxy.call(configObj.proxy, info);
+            var that = configObj.proxy;
+
+            if (typeof configObj.proxy.target[info.address] !== 'undefined') {
+
+                // FIXME: use mixin lib
+                that = Object.assign({}, configObj.proxy.target[info.address]);
+
+                if (typeof that.baseurl === 'undefined') {
+                    that.baseurl = configObj.proxy.baseurl;
+                }
+
+                if (typeof that.baseindex === 'undefined') {
+                    that.baseindex = configObj.proxy.baseindex;
+                }
+            }
+
+            proxy.call(that, info, configObj, {dryRun: configObj.dryRun});
         }).listen(configObj.port, function(err) {
             console.log('start');
         });
     });
 
-function proxy(info) {
+function proxy(info, options) {
     /*
      info = {
          facility: 7
@@ -56,6 +109,7 @@ function proxy(info) {
      */
 
     var self = this,
+        options = options || {},
         url = makeReqUrl(),
         headers = {
             "content-type": "application/json"
@@ -73,6 +127,10 @@ function proxy(info) {
         };
 
     debug('POST %s, %o', url.index, body);
+
+    if (options.dryRun) {
+        return;
+    }
 
     restler.post(url.full, {headers: headers, data: JSON.stringify(body)})
         .on('complete', function (result, response) {
