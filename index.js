@@ -4,7 +4,7 @@ var debug = require('debug')('log_agent');
 var program = require('commander');
 var jsonfile = require('jsonfile');
 var Promise = require("bluebird");
-var Syslogd = require('./syslogd'); // Using customized version
+var Syslogd = require('./src/syslogd'); // Using customized version
 var restler = require('restler');
 
 program
@@ -21,7 +21,7 @@ var defaultConfig = {
     proxy: {
         baseurl: "http://localhost:9200",
         baseindex: "/",
-        target: {}
+        source: {}
     }
 };
 
@@ -70,27 +70,27 @@ var app = jsonReadFile(program.config)
     })
     .then(function (configObj) {
         Syslogd(function(info) {
-            var that = configObj.proxy;
-
-            if (typeof configObj.proxy.target[info.address] !== 'undefined') {
-
-                // FIXME: use mixin lib
-                that = Object.assign({}, configObj.proxy.target[info.address]);
-
-                if (typeof that.baseurl === 'undefined') {
-                    that.baseurl = configObj.proxy.baseurl;
-                }
-
-                if (typeof that.baseindex === 'undefined') {
-                    that.baseindex = configObj.proxy.baseindex;
-                }
-            }
+            var that = makeContext(configObj, info.address);
 
             proxy.call(that, info, configObj, {dryRun: configObj.dryRun});
         }).listen(configObj.port, function(err) {
             console.log('start');
         });
     });
+
+//private-function-begin
+function makeContext(configObj, address) {
+    var context = Object.assign({}, configObj.proxy);
+
+    delete context.source;
+
+    if (typeof configObj.proxy.source[address] !== 'undefined') {
+        context = Object.assign(context, configObj.proxy.source[address]);
+    }
+
+    return context;
+}
+//private-function-end
 
 function proxy(info, options) {
     /*
@@ -134,8 +134,10 @@ function proxy(info, options) {
 
     restler.post(url.full, {headers: headers, data: JSON.stringify(body)})
         .on('complete', function (result, response) {
-            if (300 <= response.statusCode) {
-                debug('POST %s failed [%d]', url.index, response.statusCode);
+            if (result) {
+                debug('  <= Error: %o', result);
+            } else if (300 <= response.statusCode) {
+                debug('  <= POST %s failed [%d]', url.index, response.statusCode);
             }
         });
 

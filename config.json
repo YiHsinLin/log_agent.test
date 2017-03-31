@@ -2,7 +2,7 @@
   "proxy": {
     "baseurl": "http://localhost:9200",
     "baseindex": "/mars/test/",
-    "target": {
+    "source": {
       "192.168.137.101": {
         "baseindex": "/mars/onos/"
       }
