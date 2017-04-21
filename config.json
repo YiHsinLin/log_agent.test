@@ -3,7 +3,7 @@
     "baseurl": "http://127.0.0.1/events",
     "baseindex": "/mars/fabric/",
     "source": {
-      "192.168.137.201": {
+      "127.0.0.1": {
         "baseindex": "/mars/system/"
       }
     }
