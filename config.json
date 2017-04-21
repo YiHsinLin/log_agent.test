@@ -1,22 +1,10 @@
 {
   "proxy": {
-    "baseurl": "http://localhost:9200",
-    "baseindex": "/mars/system/",
+    "baseurl": "http://127.0.0.1/events",
+    "baseindex": "/mars/fabric/",
     "source": {
-      "192.168.1.81": {
-        "baseindex": "/mars/fabric/"
-      },
-      "192.168.1.82": {
-        "baseindex": "/mars/fabric/"
-      },
-      "192.168.1.83": {
-        "baseindex": "/mars/fabric/"
-      },
-      "192.168.1.84": {
-        "baseindex": "/mars/fabric/"
-      },
-      "192.168.1.85": {
-        "baseindex": "/mars/fabric/"
+      "192.168.137.201": {
+        "baseindex": "/mars/system/"
       }
     }
   }
