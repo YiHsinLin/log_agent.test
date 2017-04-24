@@ -1,10 +1,10 @@
 {
   "proxy": {
-    "baseurl": "http://localhost:9200",
-    "baseindex": "/mars/test/",
+    "baseurl": "https://127.0.0.1/events/",
+    "baseindex": "/mars/fabric/",
     "source": {
-      "192.168.137.101": {
-        "baseindex": "/mars/onos/"
+      "127.0.0.1": {
+        "baseindex": "/mars/system/"
       }
     }
   }

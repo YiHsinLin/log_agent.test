@@ -10,7 +10,7 @@ var restler = require('restler');
 program
     .version('0.0.1')
     //.option('--host <n>', 'host name or IP address', 'localhost')
-    .option('--port <n>', 'port number', 514)
+    .option('--port <n>', 'port number', 5140)
     .option('--config <n>', 'configuration file', 'config.json')
     .option('--dry-run')
     .parse(process.argv);
@@ -74,7 +74,7 @@ var app = jsonReadFile(program.config)
 
             proxy.call(that, info, configObj, {dryRun: configObj.dryRun});
         }).listen(configObj.port, function(err) {
-            console.log('start');
+            console.log('start, listening on port ' + configObj.port);
         });
     });
 
