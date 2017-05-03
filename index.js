@@ -134,7 +134,7 @@ function proxy(info, options) {
 
     restler.post(url.full, {headers: headers, data: JSON.stringify(body)})
         .on('complete', function (result, response) {
-            if (result) {
+            if (result instanceof Error) {
                 debug('  <= Error: %o', result);
             } else if (300 <= response.statusCode) {
                 debug('  <= POST %s failed [%d]', url.index, response.statusCode);

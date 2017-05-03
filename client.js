@@ -11,13 +11,21 @@ program
     .option('--message <n>', 'message', 'VLAN 1 link-down notification')
     .option('--facility <n>', 'facility number', 16)
     .option('--severity <n>', 'level (emerg | alert | crit | err | warning | notice | info | debug)',
-        /^(emerg|alert|crit|err|warning|notice|info|debug)$/i, 'info')
+        /^([0-7]|emerg|alert|crit|err|warning|notice|info|debug)$/i, 'info')
     .parse(process.argv);
 
 
 var client = syslog.createClient(program.host, {port: program.port});
 
 var severity = {
+    '0': 0,
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+    '6': 6,
+    '7': 7,
     'emerg': 0,
     'alert': 1,
     'crit': 2,
