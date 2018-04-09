@@ -1,7 +1,7 @@
 GET http://localhost:9200/
 
 ###
-POST http://localhost:9200/mars/test/1164104823762284 HTTP/1.1
+POST http://localhost:9200/mars/fabric/1164104823762284 HTTP/1.1
 content-type: application/json
 
 {
@@ -22,7 +22,19 @@ content-type: application/json
 
 {
     "mappings": {
-        "test": {
+        "fabric": {
+            "properties": {
+                "facility": { "type": "integer" },
+                "severity": { "type": "integer" },
+                "tag": { "type": "keyword" },
+                "time": { "type": "date" },
+                "localeDateTime": { "type": "text" },
+                "hostname": { "type": "keyword" },
+                "address": { "type": "ip" },
+                "message": { "type": "text" }
+            }
+        },
+        "system": {
             "properties": {
                 "facility": { "type": "integer" },
                 "severity": { "type": "integer" },
@@ -38,7 +50,7 @@ content-type: application/json
 }
 
 ###
-GET http://localhost:9200/mars/test/_search HTTP/1.1
+GET http://localhost:9200/mars/fabric/_search HTTP/1.1
 content-type: application/json
 
 {
